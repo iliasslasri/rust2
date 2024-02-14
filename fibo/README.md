@@ -36,3 +36,11 @@ fibo(48) = 4294967295
 fibo(49) = 4294967295
 fibo(50) = 4294967295
 ```
+
+Using checked_add we have the following error:
+```
+fibo(46) = 2971215073
+thread 'main' panicked at src/main.rs:17:36:
+called `Option::unwrap()` on a `None` value
+```
+because the checked_add returns None when the result is too large to be stored in a 32-bit unsigned integer.

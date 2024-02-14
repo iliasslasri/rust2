@@ -9,12 +9,12 @@ fn fibo(n: u32) -> u32 {
     } else if n == 1 {
         1
     } else {
-        let mut a: u32= 0;
+        let mut a: u32 = 0;
         let mut b = 1;
-        let mut c= 0;
+        let mut c = 0;
         for _ in 0..n {
             // saturated addition
-            c = a.saturating_add(b);
+            c = (a.checked_add(b)).unwrap();
             a = b;
             b = c;
         }
