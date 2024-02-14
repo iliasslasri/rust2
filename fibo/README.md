@@ -44,3 +44,12 @@ thread 'main' panicked at src/main.rs:17:36:
 called `Option::unwrap()` on a `None` value
 ```
 because the checked_add returns None when the result is too large to be stored in a 32-bit unsigned integer.
+
+
+Displaying Only Correct Values succeded by using the checked_add function if the result is too large to be stored in a 32-bit unsigned integer, the function return None, then we break the loop, and we display:
+```
+fibo(45) = 1836311903
+fibo(46) = 2971215073
+fibo(47) = Error overflow
+```
+cargo clippy doesn't suggest any changes to the code. if let Some(…) = … { } doesn't do the same thing as my code using match.
