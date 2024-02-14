@@ -1,14 +1,46 @@
+use clap::Parser;
+#[derive(Parser)]
+#[command(author, version, about)]
+/// Compute Fibonacci suite values
+
+struct Args {
+    /// The maximal number to print the fibo value of
+    value: u32,
+
+    /// Print intermediate values
+    #[arg(short, long, default_value_t = true)]
+    verbose: bool,
+
+    /// The minimum number to compute
+    #[arg(short = 'm', long, default_value_t = 0)]
+    number: u32,
+}
+
 fn main() {
-    for i in 0..=50 {
-        print!("fibo({}) = ", i);
+    let args = Args::parse();
+    let mut res = 0;
+
+    for i in args.number..=args.value {
+        if args.verbose {
+            print!("fibo({}) = ", i);
+        }
         let x = fibo(i);
         match x {
-            Some(y) => println!("{}", y),
+            Some(y) => {
+                if args.verbose {
+                    println!("{}", y);
+                } else {
+                    res = y
+                }
+            }
             None => {
                 println!("Error overflow");
                 break;
             }
         }
+    }
+    if !args.verbose {
+        println!("fibo({}) = {}", args.value, res);
     }
 }
 
