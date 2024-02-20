@@ -1,26 +1,27 @@
 use clap::Parser;
+
 #[derive(Parser)]
 #[command(author, version, about)]
 /// Compute Fibonacci suite values
-
 struct Args {
     /// The maximal number to print the fibo value of
     value: u32,
 
     /// Print intermediate values
-    #[arg(short, long, default_value_t = true)]
+    #[arg(short, long)]
     verbose: bool,
 
     /// The minimum number to compute
-    #[arg(short = 'm', long, default_value_t = 0)]
-    number: u32,
+    #[arg(short = 'm', long)]
+    min: Option<u32>,
 }
 
 fn main() {
     let args = Args::parse();
+    let min_val = args.min.unwrap_or(0);
     let mut res = 0;
 
-    for i in args.number..=args.value {
+    for i in min_val..=args.value {
         if args.verbose {
             print!("fibo({}) = ", i);
         }

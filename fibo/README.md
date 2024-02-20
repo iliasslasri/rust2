@@ -53,3 +53,25 @@ fibo(46) = 2971215073
 fibo(47) = Error overflow
 ```
 cargo clippy doesn't suggest any changes to the code. if let Some(…) = … { } doesn't do the same thing as my code using match.
+
+
+
+The help message is displayed as follows:
+
+```
+iliass@DESKTOP-ILIASS:~/iliass-lasri/fibo$ cargo run -- --help
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/fibo --help`
+Compute Fibonacci suite values
+
+Usage: fibo [OPTIONS] <VALUE>
+
+Arguments:
+  <VALUE>  The maximal number to print the fibo value of
+
+Options:
+  -v, --verbose    Print intermediate values
+  -m, --min <MIN>  The minimum number to compute
+  -h, --help       Print help
+  -V, --version    Print version
+```
