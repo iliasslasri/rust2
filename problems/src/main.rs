@@ -17,3 +17,10 @@ fn main() {
         binding
     )
 }
+
+/* Appropriate lifetimes */
+// Since at call time, we don't want any constraint between the lifetimes of those two strings,
+// we just infer the smallest lifetime to our return reference.
+fn choose_str<'a>(s1: &'a str, s2: &'a str, select_s1: bool) -> &'a str {
+    if select_s1 { s1 } else { s2 }
+}
