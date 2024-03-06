@@ -63,7 +63,23 @@ impl Image {
     pub fn new_solid(color: Color) -> Self {
         Image([color; 64])
     }
+
+    pub fn row(&self, row: usize) -> &[Color] {
+        &self.0[row * 8..(row + 1) * 8]
+    }
+    
+    pub fn gradient(color: Color) -> Self {
+        let mut image: Image = Default::default();
+        for row in 0..8 {
+            for col in 0..8 {
+                image[(row, col)] = color / (1 + row * row + col) as f32;
+            }
+        }
+    image
+    }
+    
 }
+
 
 impl Default for Image {
     fn default() -> Self {
@@ -75,7 +91,7 @@ impl core::ops::Index<(usize, usize)> for Image {
     type Output = Color;
 
     fn index(&self, (x, y): (usize, usize)) -> &Color {
-        &self.0[y * 8 + x]
+        &self.0[x * 8 + y]
     }
 
 }
