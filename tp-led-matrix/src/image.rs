@@ -1,8 +1,10 @@
 #![no_std]
 
-use micromath::F32Ext;
+// Import the F32Ext trait without importing the F32Ext name
+use micromath::F32Ext as _;
 
-#[path = "gamma.rs"] mod gamma;
+#[path = "gamma.rs"]
+mod gamma;
 
 // Constants
 const RED: Color = Color { r: 255, g: 0, b: 0 };
@@ -51,4 +53,36 @@ impl core::ops::Div<f32> for Color {
     fn div(self, f: f32) -> Color {
         self * (1.0 / f)
     }
+}
+
+
+//----------- Image structure ------------
+struct Image([Color; 64]);
+
+impl Image {
+    pub fn new_solid(color: Color) -> Self {
+        Image([color; 64])
+    }
+}
+
+impl Default for Image {
+    fn default() -> Self {
+        Image([Color::default(); 64])
+    }
+}
+
+impl core::ops::Index<(usize, usize)> for Image {
+    type Output = Color;
+
+    fn index(&self, (x, y): (usize, usize)) -> &Color {
+        &self.0[y * 8 + x]
+    }
+
+}
+
+impl core::ops::IndexMut<(usize, usize)> for Image {
+    fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Color {
+        &mut self.0[y * 8 + x]
+    }
+    
 }
