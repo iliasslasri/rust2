@@ -8,18 +8,12 @@ const RED: Color = Color { r: 255, g: 0, b: 0 };
 const GREEN: Color = Color { r: 0, g: 255, b: 0 };
 const BLUE: Color = Color { r: 0, g: 0, b: 255 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 #[repr(C)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
     pub b: u8,
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Color { r: 0, g: 0, b: 0 }
-    }
 }
 
 impl Color {
@@ -53,7 +47,6 @@ impl core::ops::Div<f32> for Color {
     }
 }
 
-
 //----------- Image structure ------------
 #[repr(transparent)]
 pub struct Image([Color; 64]);
@@ -66,7 +59,7 @@ impl Image {
     pub fn row(&self, row: usize) -> &[Color] {
         &self.0[row * 8..(row + 1) * 8]
     }
-    
+
     pub fn gradient(color: Color) -> Self {
         let mut image: Image = Default::default();
         for row in 0..8 {
@@ -74,11 +67,9 @@ impl Image {
                 image[(row, col)] = color / (1 + row * row + col) as f32;
             }
         }
-    image
+        image
     }
-    
 }
-
 
 impl Default for Image {
     fn default() -> Self {
@@ -92,14 +83,12 @@ impl core::ops::Index<(usize, usize)> for Image {
     fn index(&self, (x, y): (usize, usize)) -> &Color {
         &self.0[x * 8 + y]
     }
-
 }
 
 impl core::ops::IndexMut<(usize, usize)> for Image {
     fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Color {
         &mut self.0[y * 8 + x]
     }
-    
 }
 
 impl AsRef<[u8; 192]> for Image {
