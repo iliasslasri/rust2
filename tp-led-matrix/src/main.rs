@@ -109,11 +109,26 @@ async fn main(spawner: Spawner) -> () {
     // task for serial receiver
     let _ = spawner.spawn(serial_receiver(uart));
 
-    Timer::after(Duration::from_secs(2)).await;
-
-    let image = POOL.alloc(Image::gradient(RED));
-    unsafe {
-        NEXT_IMAGE.signal(image.unwrap());
+    let mut i: u8 = 0;
+    loop {
+        let image = POOL.alloc(match i {
+            0 => Image::gradient(Color { r: 0, g: 255, b: 0 }),
+            1 => Image::gradient(Color { r: 0, g: 0, b: 255 }),
+            2 => Image::gradient(Color { r: 255, g: 0, b: 0 }),
+            3 => Image::new_solid(RED),
+            4 => Image::new_solid(GREEN),
+            5 => Image::new_solid(BLUE),
+            _ => Image::new_solid(Color { r: 0, g: 0, b: 0 }),
+        });
+        if i == 5 {
+            i = 0;
+        }
+        i += 1;
+        // send image
+        unsafe {
+            NEXT_IMAGE.signal(image.unwrap());
+        }
+        Timer::after(Duration::from_secs(1)).await;
     }
 }
 
