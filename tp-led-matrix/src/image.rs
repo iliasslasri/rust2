@@ -1,13 +1,12 @@
-use micromath::F32Ext as _;
-
 #[path = "gamma.rs"]
 mod gamma;
 
 // Constants
-const RED: Color = Color { r: 255, g: 0, b: 0 };
-const GREEN: Color = Color { r: 0, g: 255, b: 0 };
-const BLUE: Color = Color { r: 0, g: 0, b: 255 };
+pub const RED: Color = Color { r: 255, g: 0, b: 0 };
+pub const GREEN: Color = Color { r: 0, g: 255, b: 0 };
+pub const BLUE: Color = Color { r: 0, g: 0, b: 255 };
 
+//----------- Color structure ------------
 #[derive(Clone, Copy, Default)]
 #[repr(C)]
 pub struct Color {
@@ -52,7 +51,7 @@ impl core::ops::Div<f32> for Color {
 pub struct Image([Color; 64]);
 
 impl Image {
-    pub fn new_solid(color: Color) -> Self {
+    pub const fn new_solid(color: Color) -> Self {
         Image([color; 64])
     }
 
@@ -97,8 +96,19 @@ impl AsRef<[u8; 192]> for Image {
     }
 }
 
-impl AsMut<[u8; 192]> for Image {
-    fn as_mut(&mut self) -> &mut [u8; 192] {
-        unsafe { &mut *(self as *mut Self as *mut [u8; 192]) }
+impl Image {
+    pub fn from_buffer(buff: &[u8; 192]) -> Image {
+        let mut image = Image::default();
+
+        for row in 0..8 {
+            for col in 0..8 {
+                image[(row, col)] = Color {
+                    r: buff[row * 24 + col * 3],
+                    g: buff[row * 24 + col * 3 + 1],
+                    b: buff[row * 24 + col * 3 + 2],
+                };
+            }
+        }
+        image
     }
 }

@@ -1,13 +1,10 @@
-
 use embassy_stm32::gpio::*;
 use embassy_stm32::peripherals::*;
 
 use crate::image::{Color, Image};
 
 // -- For the delay function
-use embedded_hal::delay::DelayNs as _;
-use embassy_time::Delay;
-
+use embassy_time::{Duration, Ticker, Timer};
 
 pub struct Matrix<'a> {
     sb: Output<'a, PC5>,
@@ -25,8 +22,8 @@ impl Matrix<'_> {
     /// the bank 0 will be initialized by calling `init_bank0()` on the
     /// newly constructed structure.
     /// The pins will be set to very high speed mode.
-    #[allow(clippy::too_many_arguments)]   // Necessary to avoid a clippy warning
-    pub fn new(
+    #[allow(clippy::too_many_arguments)] // Necessary to avoid a clippy warning
+    pub async fn new(
         pa2: PA2, // C2
         pa3: PA3, // C7
         pa4: PA4, // SDA
@@ -48,19 +45,18 @@ impl Matrix<'_> {
             sck: Output::new(pb1, Level::Low, Speed::VeryHigh),
             sda: Output::new(pa4, Level::Low, Speed::VeryHigh),
             rows: [
-                Output::new(pa2, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pa3, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pa5, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pa6, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pa7, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pa15, Level::Low, Speed::VeryHigh).degrade(),
-                Output::new(pb0, Level::Low, Speed::VeryHigh).degrade(),
                 Output::new(pb2, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa15, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa2, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa7, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa6, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa5, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pb0, Level::Low, Speed::VeryHigh).degrade(),
+                Output::new(pa3, Level::Low, Speed::VeryHigh).degrade(),
             ],
         };
 
-        // Wait 100 ms
-        Delay.delay_ms(100);
+        Timer::after(Duration::from_millis(100)).await;
 
         // Set RST high
         m.rst.set_high();
@@ -75,8 +71,6 @@ impl Matrix<'_> {
     fn pulse_sck(&mut self) {
         // Set SCK high
         self.sck.set_high();
-        // Wait 1µs
-        Delay.delay_us(1);
         // Set SCK low
         self.sck.set_low();
     }
@@ -85,8 +79,6 @@ impl Matrix<'_> {
     fn pulse_lat(&mut self) {
         // Set LAT low
         self.lat.set_low();
-        // Wait 1µs
-        Delay.delay_us(1);
         // Set LAT high
         self.lat.set_high();
     }
@@ -110,7 +102,11 @@ impl Matrix<'_> {
     /// be deactivated and the new one activated.
     pub fn send_row(&mut self, row: usize, pixels: &[Color]) {
         // Deactivate the previous row
-        self.rows[row].set_low();
+        if row > 0 {
+            self.rows[row - 1].set_low();
+        } else {
+            self.rows[7].set_low();
+        }
 
         // Send the new row
         for pixel in pixels {
@@ -151,10 +147,11 @@ impl Matrix<'_> {
     }
 
     /// Display a full image, row by row, as fast as possible.
-    pub fn display_image(&mut self, image: &Image) {
+    pub async fn display_image(&mut self, image: &Image, ticker: &mut Ticker) {
         // Do not forget that image.row(n) gives access to the content of row n,
         // and that self.send_row() uses the same format.
         for row in 0..8 {
+            ticker.next().await;
             self.send_row(row, image.row(row));
         }
     }
