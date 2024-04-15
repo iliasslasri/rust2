@@ -48,7 +48,7 @@ impl core::ops::Div<f32> for Color {
 
 //----------- Image structure ------------
 #[repr(transparent)]
-#[derive(Debug,Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Image([Color; 64]);
 
 impl Image {
@@ -94,6 +94,12 @@ impl core::ops::IndexMut<(usize, usize)> for Image {
 impl AsRef<[u8; 192]> for Image {
     fn as_ref(&self) -> &[u8; 192] {
         unsafe { &*(self as *const Self as *const [u8; 192]) }
+    }
+}
+
+impl AsMut<[u8; 192]> for Image {
+    fn as_mut(&mut self) -> &mut [u8; 192] {
+        unsafe { &mut *(self as *mut Self as *mut [u8; 192]) }
     }
 }
 
