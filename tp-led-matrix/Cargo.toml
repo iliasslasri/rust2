@@ -21,6 +21,7 @@ embedded-hal = "1.0.0"
 embassy-executor = {version = "0.5.0", features = ["arch-cortex-m", "executor-thread", "defmt", "integrated-timers"]}
 embassy-sync = {version = "0.5.0"}
 heapless = "0.8.0"
+futures = {version = "0.3" ,default-features = false}
 
 # optimizing the setup
 [profile.release]

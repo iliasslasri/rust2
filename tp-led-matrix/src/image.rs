@@ -7,7 +7,7 @@ pub const GREEN: Color = Color { r: 0, g: 255, b: 0 };
 pub const BLUE: Color = Color { r: 0, g: 0, b: 255 };
 
 //----------- Color structure ------------
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 #[repr(C)]
 pub struct Color {
     pub r: u8,
@@ -48,6 +48,7 @@ impl core::ops::Div<f32> for Color {
 
 //----------- Image structure ------------
 #[repr(transparent)]
+#[derive(Debug,Clone, Copy)]
 pub struct Image([Color; 64]);
 
 impl Image {

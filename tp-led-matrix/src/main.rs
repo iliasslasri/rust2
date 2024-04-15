@@ -1,9 +1,6 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
-
-// use cortex_m_rt::entry;
-
 // ------ debug
 use defmt_rtt as _;
 use embassy_executor::Spawner;
@@ -11,9 +8,11 @@ use embassy_stm32 as _;
 
 // use embassy_sync::mutex::MutexGuard as _;
 use embassy_stm32::usart::Uart;
+
 // Just to link it in the executable (it provides the vector table)
 use embassy_stm32::gpio::*;
 use embassy_stm32::peripherals::*;
+use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker, Timer};
 use panic_probe as _;
 
@@ -40,14 +39,18 @@ use embassy_stm32::bind_interrupts;
 use embassy_stm32::dma::NoDma as noDma;
 use embassy_stm32::usart::{self, DataBits, Parity, StopBits};
 
-// binding _irq
 bind_interrupts!(struct Irqs {
     USART1 => usart::InterruptHandler<USART1>;
 });
 
 // Triple buff
-use heapless::{box_pool, pool::boxed::BoxBlock};
+use futures::FutureExt;
+use heapless::{
+    box_pool,
+    pool::boxed::{Box, BoxBlock},
+};
 box_pool!(POOL: Image);
+static mut NEXT_IMAGE: Signal<ThreadModeRawMutex, Box<POOL>> = Signal::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) -> () {
@@ -75,8 +78,10 @@ async fn main(spawner: Spawner) -> () {
     )
     .await;
     unsafe {
+        #[allow(clippy::declare_interior_mutable_const)]
         const BLOCK: BoxBlock<Image> = BoxBlock::new();
         static mut MEMORY: [BoxBlock<Image>; 3] = [BLOCK; 3];
+        #[allow(static_mut_refs)]
         for block in &mut MEMORY {
             POOL.manage(block);
         }
@@ -101,14 +106,17 @@ async fn main(spawner: Spawner) -> () {
     let uart: Uart<'static, USART1, noDma, DMA1_CH5> =
         Uart::new(p.USART1, p.PB7, p.PB6, Irqs, noDma, p.DMA1_CH5, config).unwrap();
 
-    // serial ports pins
-    // let serial_ports = (p.PA9, p.PA10);
-
     // task for serial receiver
     let _ = spawner.spawn(serial_receiver(uart));
+
+    Timer::after(Duration::from_secs(2)).await;
+
+    let image = POOL.alloc(Image::gradient(RED));
+    unsafe {
+        NEXT_IMAGE.signal(image.unwrap());
+    }
 }
 
-// task
 #[embassy_executor::task]
 async fn blinker(p: PB14) {
     // init the port as output
@@ -131,20 +139,38 @@ async fn blinker(p: PB14) {
 async fn display(mut matrix: Matrix<'static>) {
     let mut ticker = Ticker::every(Duration::from_hz(640));
     let mut row_buffer: &[Color];
+
+    let mut image_option: Option<Box<POOL>>;
+    let mut image: Image = Image::gradient(GREEN);
+
     loop {
-        for row in 0..8 {
-            ticker.next().await;
-            let image = IMAGE.lock().await;
-            row_buffer = image.row(row);
-            matrix.send_row(row, row_buffer);
+        unsafe {
+            image_option = NEXT_IMAGE.wait().now_or_never();
+        }
+        match image_option {
+            Some(new_image) => {
+                image = *new_image;
+
+                for row in 0..8 {
+                    ticker.next().await;
+                    row_buffer = image.row(row);
+                    matrix.send_row(row, row_buffer);
+                }
+            }
+            None => {
+                // If no image is available, we just display the current image.;
+                for row in 0..8 {
+                    ticker.next().await;
+                    row_buffer = image.row(row);
+                    matrix.send_row(row, row_buffer);
+                }
+            }
         }
     }
 }
 
 #[embassy_executor::task]
 async fn chaging_image() {
-    //let mut ticker = Ticker::every(Duration::from_secs(1));
-
     loop {
         Timer::after(Duration::from_millis(1000)).await;
         *IMAGE.lock().await = Image::new_solid(RED);
